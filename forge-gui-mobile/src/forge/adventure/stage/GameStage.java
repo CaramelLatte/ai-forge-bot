@@ -26,6 +26,7 @@ import com.github.tommyettinger.textra.TypingAdapter;
 import com.github.tommyettinger.textra.TypingLabel;
 import forge.Forge;
 import forge.Graphics;
+import forge.adventure.llm.AdventureAgent;
 import forge.adventure.character.CharacterSprite;
 import forge.adventure.character.MapActor;
 import forge.adventure.character.PlayerSprite;
@@ -475,6 +476,11 @@ public abstract class GameStage extends Stage {
         if (KeyBinding.Down.isPressed(keycode)) {
             keyboardInput.y = -1;
         }
+        if (keycode == Input.Keys.F9) {
+            // hand control to the LLM agent, or take it back
+            AdventureAgent.get().setEnabled(!AdventureAgent.isActive());
+            return true;
+        }
         if (keycode == Input.Keys.F5)//todo config
         {
             if (TileMapScene.instance().currentMap().isInMap()) {
@@ -708,6 +714,9 @@ public abstract class GameStage extends Stage {
     public void resetPlayerLocation() {
         PointOfInterest poi = Current.world().findPointsOfInterest("Spawn");
         if (poi != null) {
+            if (AdventureAgent.isActive()) {
+                AdventureAgent.get().onDeath();
+            }
             Forge.advFreezePlayerControls = true;
             PlayerSprite playerSprite = getPlayerSprite();
             playerSprite.setAnimation(CharacterSprite.AnimationTypes.Death);

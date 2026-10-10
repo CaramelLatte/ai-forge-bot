@@ -4,6 +4,7 @@
   - [FAQ](Frequently-Asked-Questions.md)
   - [SteamDeck/Bazzite](Steam-Deck-and-Bazzite-Install.md)
   - [AI](ai.md)
+  - [LLM Player](LLM-Player.md)
   - [Network Play](network-play.md)
   - [Advanced search](Advanced-Search.md)
   - [Advanced Yield Options](Advanced-Yield-Options.md)

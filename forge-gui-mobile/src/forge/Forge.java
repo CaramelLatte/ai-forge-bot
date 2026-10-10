@@ -17,6 +17,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Clipboard;
 import com.badlogic.gdx.utils.Disposable;
+import forge.adventure.llm.AdventureAgent;
 import forge.adventure.scene.*;
 import forge.adventure.stage.MapStage;
 import forge.adventure.stage.WorldStage;
@@ -211,6 +212,11 @@ public class Forge implements ApplicationListener {
         destroyThis = true; //Prevent back()
         if (Files.exists(Paths.get(ForgeConstants.DEFAULT_SKINS_DIR+ForgeConstants.ADV_TEXTURE_BG_FILE)))
             selector = getForgePreferences().getPref(FPref.UI_SELECTOR_MODE);
+        if (AdventureAgent.autostartRequested()) {
+            // the LLM plays Adventure mode: skip the mode selector and let it take over once loaded
+            selector = "Adventure";
+            AdventureAgent.get().setEnabled(true);
+        }
 
         //screenWidth and screenHeight should be set initially and only change upon restarting the app
         screenWidth = Gdx.app.getGraphics().getWidth();
@@ -893,6 +899,10 @@ public class Forge implements ApplicationListener {
         }, null, false, true));
     }
 
+    public static boolean isTransitioning() {
+        return transitionScreen != null;
+    }
+
     public static void setTransitionScreen(TransitionScreen screen) {
         transitionScreen = screen;
     }
@@ -957,6 +967,9 @@ public class Forge implements ApplicationListener {
 
         ImageCache.getInstance().allowSingleLoad();
         ForgeAnimation.advanceAll();
+        if (isMobileAdventureMode) {
+            AdventureAgent.get().tick(Gdx.graphics.getDeltaTime());
+        }
 
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT); // Clear the screen.
         float delta = Gdx.graphics.getDeltaTime();
@@ -977,13 +990,22 @@ public class Forge implements ApplicationListener {
             }
             // render overlay on top of adventure screen
             OverlayText.getInstance().render(delta);
+            if (isMobileAdventureMode) {
+                AdventureAgent.get().renderStatus();
+            }
             // render framerate if enabled
             FrameRate.getInstance().render(showFPS);
+            if (isMobileAdventureMode) {
+                AdventureAgent.get().pollScreenshotRequest(delta);
+            }
             return;
         }
         // render classic
         Classic.getInstance().render(screen);
         FrameRate.getInstance().render(showFPS);
+        if (isMobileAdventureMode) {
+            AdventureAgent.get().pollScreenshotRequest(delta);
+        }
     }
 
     private static FContainer getHierachyScreen() {

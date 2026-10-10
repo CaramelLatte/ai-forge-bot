@@ -244,6 +244,35 @@ public class RewardScene extends UIScene {
         super.enter();
     }
 
+    /**
+     * The "All" auto-sell checkbox in the header: marks (or unmarks) every card reward for auto-sale. Only loot,
+     * event and quest rewards have it. Returns false when this screen has no such checkbox.
+     */
+    public boolean setAutoSellAll(boolean sell) {
+        if (type != Type.EventReward && type != Type.Loot && type != Type.QuestReward) {
+            return false;
+        }
+        autoSell = sell;
+        String cb = autoSell ? "☑ " : "☐ ";
+        headerLabel.setText("[%?SHINY][;]" + cb + Forge.getLocalizer().getMessage("lblAll"));
+        for (Actor actor : new Array.ArrayIterator<>(generated)) {
+            if (actor instanceof RewardActor rewardActor) {
+                rewardActor.setAutoSell(autoSell);
+            }
+        }
+        return true;
+    }
+
+    /** True once every reward has been turned face up; cards can only be marked for auto-sale after that. */
+    public boolean allRewardsFlipped() {
+        for (Actor actor : new Array.ArrayIterator<>(generated)) {
+            if (actor instanceof RewardActor rewardActor && !rewardActor.isFlipped()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void showLootOrDone() {
         boolean exit = true;
         for (Actor actor : new Array.ArrayIterator<>(generated)) {
@@ -408,16 +437,7 @@ public class RewardScene extends UIScene {
         headerLabel.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (type == Type.EventReward || type == Type.Loot || type == Type.QuestReward) {
-                    autoSell = !autoSell;
-                    String cb = autoSell ? "\u2611 " : "\u2610 ";
-                    headerLabel.setText("[%?SHINY][;]" + cb + Forge.getLocalizer().getMessage("lblAll"));
-                    for (Actor actor : new Array.ArrayIterator<>(generated)) {
-                        if (actor instanceof RewardActor rewardActor) {
-                            rewardActor.setAutoSell(autoSell);
-                        }
-                    }
-                }
+                setAutoSellAll(!autoSell);
             }
         });
         if (type == Type.Shop) {

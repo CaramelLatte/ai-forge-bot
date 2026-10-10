@@ -108,26 +108,31 @@ public class StartScene extends UIScene {
         final String lastActiveSave = Config.instance().getSettingData().lastActiveSave;
 
         if (WorldSave.isSafeFile(lastActiveSave)) {
-            if (loaded)
-                return true;
-            loaded = true;
-            try {
-                Forge.setTransitionScreen(new TransitionScreen(() -> {
-                    loaded = false;
-                    if (WorldSave.load(WorldSave.filenameToSlot(lastActiveSave))) {
-                        SoundSystem.instance.changeBackgroundTrack();
-                        Forge.switchScene(GameScene.instance());
-                    } else {
-                        Forge.clearTransitionScreen();
-                    }
-                }, null, false, true, Forge.getLocalizer().getMessage("lblLoadingWorld")));
-            } catch (Exception e) {
-                loaded = false;
-                Forge.clearTransitionScreen();
-            }
+            loadSlot(WorldSave.filenameToSlot(lastActiveSave));
         }
 
         return true;
+    }
+
+    /** Loads a save slot and enters the world map (also used by the LLM agent, which plays in a fixed slot). */
+    public void loadSlot(int slot) {
+        if (loaded)
+            return;
+        loaded = true;
+        try {
+            Forge.setTransitionScreen(new TransitionScreen(() -> {
+                loaded = false;
+                if (WorldSave.load(slot)) {
+                    SoundSystem.instance.changeBackgroundTrack();
+                    Forge.switchScene(GameScene.instance());
+                } else {
+                    Forge.clearTransitionScreen();
+                }
+            }, null, false, true, Forge.getLocalizer().getMessage("lblLoadingWorld")));
+        } catch (Exception e) {
+            loaded = false;
+            Forge.clearTransitionScreen();
+        }
     }
 
     public boolean settings() {

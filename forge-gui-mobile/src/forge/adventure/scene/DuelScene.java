@@ -14,6 +14,7 @@ import forge.card.CardZoom;
 import forge.adventure.character.EnemySprite;
 import forge.adventure.character.PlayerSprite;
 import forge.adventure.data.*;
+import forge.adventure.llm.AdventureAgent;
 import forge.adventure.player.AdventurePlayer;
 import forge.adventure.stage.GameHUD;
 import forge.adventure.stage.IAfterMatch;
@@ -85,6 +86,8 @@ public class DuelScene extends ForgeScene {
     final int enemyAvatarKey = 90001;
     final int playerAvatarKey = 90000;
     FOptionPane bossDialogue;
+    /** The LLM agent plays this duel instead of the human. */
+    boolean llmSeat = false;
     List<IPaperCard> playerExtras = new ArrayList<>();
     List<IPaperCard> AIExtras = new ArrayList<>();
     private static final HashMap<Integer, String> introKeysMap = new HashMap<>(64);
@@ -150,7 +153,13 @@ public class DuelScene extends ForgeScene {
             winner = humanPlayer == hostedMatch.getGame().getMatch().getWinner();
 
             //Persists expended (or potentially gained) shards back to Adventure
-            if (eventData == null || eventData.eventRules.allowsShards) {
+            if (llmSeat && (eventData == null || eventData.eventRules.allowsShards)) {
+                for (Player p : hostedMatch.getGame().getPlayers()) {
+                    if (p.getRegisteredPlayer() == humanPlayer) {
+                        Current.player().setShards(p.getNumManaShards());
+                    }
+                }
+            } else if (eventData == null || eventData.eventRules.allowsShards) {
                 List<PlayerControllerHuman> humans = hostedMatch.getHumanControllers();
                 {
                     if (humans.size() == 1) {
@@ -198,8 +207,8 @@ public class DuelScene extends ForgeScene {
         boolean isBossLoss = (chaosBattle || showMessages) && !finalWinner;
         boolean hasAnteResults = !anteWonCards.isEmpty() || !anteLostCards.isEmpty();
 
-        // No popups needed, preserve original behavior
-        if (!hasAnteResults && !isBossLoss) {
+        // No popups needed, preserve original behavior. The LLM agent can't click popups, so it never gets them.
+        if ((!hasAnteResults && !isBossLoss) || llmSeat) {
             afterGameEnd(enemyName, finalWinner);
             return;
         }
@@ -376,7 +385,8 @@ public class DuelScene extends ForgeScene {
         }
 
         humanPlayer = RegisteredPlayer.forVariants(playerCount, appliedVariants, playerDeck, null, false, null, null);
-        LobbyPlayer playerObject = GamePlayerUtil.getGuiPlayer();
+        llmSeat = AdventureAgent.isActive();
+        LobbyPlayer playerObject = llmSeat ? AdventureAgent.get().createLobbyPlayer(enemy) : GamePlayerUtil.getGuiPlayer();
         FSkin.getAvatars().put(playerAvatarKey, advPlayer.avatar());
         playerObject.setAvatarIndex(playerAvatarKey);
         humanPlayer.setPlayer(playerObject);
@@ -513,7 +523,11 @@ public class DuelScene extends ForgeScene {
             currentEnemy = currentEnemy.nextEnemy;
         }
 
-        players.add(humanPlayer);
+        if (llmSeat) {
+            players.add(0, humanPlayer); //first player is shown at the bottom when spectating
+        } else {
+            players.add(humanPlayer);
+        }
 
         if(eventData != null && eventData.draft != null) {
             for(RegisteredPlayer p : players)
@@ -546,7 +560,7 @@ public class DuelScene extends ForgeScene {
         MatchController.instance.setGameView(hostedMatch.getGameView());
         boolean showMessages = enemy.getData().boss || (enemy.getData().copyPlayerDeck && Current.player().isUsingCustomDeck());
         LoadingOverlay matchOverlay;
-        if (chaosBattle || showMessages || isDeckMissing) {
+        if (!llmSeat && (chaosBattle || showMessages || isDeckMissing)) {
             final FBufferedImage fb = getFBEnemyAvatar();
             String Intro = enemy.getBossIntro();
             if (Intro != null) {

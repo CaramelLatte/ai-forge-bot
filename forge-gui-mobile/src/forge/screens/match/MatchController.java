@@ -10,6 +10,7 @@ import java.util.Set;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 
+import forge.adventure.llm.AdventureAgent;
 import forge.adventure.scene.DuelScene;
 import forge.adventure.util.Config;
 import forge.game.GameState;
@@ -343,7 +344,8 @@ public class MatchController extends NetworkGuiGame {
     @Override
     public void finishGame() {
         if (Forge.isMobileAdventureMode) {
-            if (Config.instance().getSettingData().disableWinLose) {
+            // the LLM agent can't press the win/lose screen buttons, so it takes the no-win/lose-screen path
+            if (Config.instance().getSettingData().disableWinLose || AdventureAgent.isActive()) {
                 MatchController.writeMatchPreferences();
                 if (getGameView().isMatchOver()){
                     Forge.setCursor(null, "0");

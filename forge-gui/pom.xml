@@ -87,6 +87,14 @@
             <artifactId>gson</artifactId>
             <version>2.13.2</version>
         </dependency>
+        <!-- Claude backend for the LLM player. Optional so mobile builds don't package it; the desktop
+             launchers declare it themselves. forge.llm.ClaudeBackend is only loaded when provider is claude. -->
+        <dependency>
+            <groupId>com.anthropic</groupId>
+            <artifactId>anthropic-java</artifactId>
+            <version>2.34.0</version>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>

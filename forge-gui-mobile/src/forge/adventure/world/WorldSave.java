@@ -4,6 +4,7 @@ import com.badlogic.gdx.utils.TimeUtils;
 import forge.Forge;
 import com.badlogic.gdx.Gdx;
 import forge.OverlayText;
+import forge.adventure.llm.AdventureAgent;
 import forge.adventure.data.DifficultyData;
 import forge.adventure.player.AdventurePlayer;
 import forge.adventure.pointofintrest.PointOfInterest;
@@ -160,7 +161,13 @@ public class WorldSave {
     }
 
     public boolean autoSave() {
-        return save("auto save" + SaveLoadScene.instance().getSaveFileSuffix(), AUTO_SAVE_SLOT);
+        boolean saved = save("auto save" + SaveLoadScene.instance().getSaveFileSuffix(), AUTO_SAVE_SLOT);
+        // the LLM agent keeps its progress in its own slot as well
+        int agentSlot = AdventureAgent.mirrorSlot();
+        if (agentSlot > 0) {
+            saved &= save("LLM agent" + SaveLoadScene.instance().getSaveFileSuffix(), agentSlot);
+        }
+        return saved;
     }
 
     public boolean quickSave() {

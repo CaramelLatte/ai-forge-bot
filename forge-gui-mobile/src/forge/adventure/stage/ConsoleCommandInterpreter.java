@@ -1,10 +1,11 @@
 package forge.adventure.stage;
 
-
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import forge.Forge;
 import forge.StaticData;
+import forge.adventure.llm.AdventureAgent;
+import forge.llm.LlmConfig;
 import forge.adventure.character.PlayerSprite;
 import forge.adventure.data.*;
 import forge.adventure.pointofintrest.PointOfInterest;
@@ -414,6 +415,19 @@ public class ConsoleCommandInterpreter {
                         , E.boss ? " - BOSS" : "");
             }
             return "Enemy color Identity dumped to stdout.";
+        });
+        registerCommand(new String[]{"llm", "on"}, s -> {
+            AdventureAgent.get().setEnabled(true);
+            return "LLM agent enabled (" + LlmConfig.get().activeModel() + "). It takes over on the world map.";
+        });
+        registerCommand(new String[]{"llm", "off"}, s -> {
+            AdventureAgent.get().setEnabled(false);
+            return "LLM agent disabled.";
+        });
+        registerCommand(new String[]{"llm", "status"}, s -> AdventureAgent.get().getStatus());
+        registerCommand(new String[]{"llm", "reload"}, s -> {
+            LlmConfig.reload();
+            return "Reloaded " + LlmConfig.getDir() + "config.json (model " + LlmConfig.get().activeModel() + ")";
         });
         registerCommand(new String[]{"heal", "amount"}, s -> {
             if (s.length < 1) return "Command needs 1 parameter: Amount";

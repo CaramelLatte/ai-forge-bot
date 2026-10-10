@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import forge.Forge;
 import forge.OverlayText;
+import forge.adventure.llm.AdventureAgent;
 import forge.adventure.character.CharacterSprite;
 import forge.adventure.character.EnemySprite;
 import forge.adventure.data.*;
@@ -68,6 +69,15 @@ public class WorldStage extends GameStage implements SaveFileContent {
         navArrow = new NavArrowActor();
         addActor(navArrow);
         navArrow.toFront();
+    }
+
+    /** Enemies currently roaming the map. */
+    public List<EnemySprite> getEnemySprites() {
+        List<EnemySprite> result = new ArrayList<>(enemies.size());
+        for (Pair<Float, EnemySprite> pair : enemies) {
+            result.add(pair.getValue());
+        }
+        return result;
     }
 
     public static WorldStage getInstance() {
@@ -222,6 +232,10 @@ public class WorldStage extends GameStage implements SaveFileContent {
                 PointOfInterestMapSprite point = (PointOfInterestMapSprite) actor;
                 if (!point.getPointOfInterest().getActive())
                 {
+                    continue;
+                }
+                // the LLM agent only enters the location it is walking to
+                if (AdventureAgent.isActive() && !AdventureAgent.get().wantsToEnter(point.getPointOfInterest())) {
                     continue;
                 }
                 if (player.collideWith(point.getBoundingRect())) {
